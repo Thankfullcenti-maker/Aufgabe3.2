@@ -2,50 +2,60 @@ package de.hsbi.lockgame.logic;
 
 import de.hsbi.lockgame.model.Direction;
 import de.hsbi.lockgame.model.Level;
+import de.hsbi.lockgame.model.Snake;
 import de.hsbi.lockgame.ui.GamePanel;
 
-// TODO: Die GameEngine verwaltet den GameState.
-
-// TODO: Die GameEngine wird durch den Timer im main() getriggert ("tick") und lässt den GameState
-// daraufhin einen Schritt ausführen. Dann müssen alle für den GameState registrierten Observer
-// benachrichtigt werden, damit das Spielfeld neu gezeichnet werden kann o.ä.
-
-// TODO: Die GameEngine beobachtet die Tastatureingaben (gesetzt in GamePanel.setupKeyBindings()),
-// die in Direction übersetzt und an GameEngine.update() übergeben werden. Wenn es eine neue Eingabe
-// gibt, wird die "update"-Methode von GameEngine aufgerufen, und die GameEngine muss die
-// Blickrichtung der Schlange aktualisieren und diese GameState-Änderung den für den GameState
-// registrierten Observer mitteilen.
-
-// TODO: Die GameEngine ist ein Observer für Direction: GameEngine.update(Direction)
-// TODO: Die GameEngine ist ein Observable für GameState: GamePanel.update(GameState)
 public final class GameEngine {
 
-  public GameEngine(Level level) {
-    // TODO: lege eine neue GameEngine mit den übergebenen Informationen an
-    throw new UnsupportedOperationException("method not implemented yet");
-  }
+    private GameState currentGameState;
+    private GamePanel gamePanel;
 
-  public GameState state() {
-    // TODO: gebe den aktuellen Spielzustand zurück
-    throw new UnsupportedOperationException("method not implemented yet");
-  }
+    public GameEngine(Level level) {
+        // Initialisiert den ersten Zustand des Spiels
+        // Die Schlange startet an der im Level definierten Startposition
+        // Verpackt den Startpunkt des Levels in eine Liste für die Schlange
+        this.currentGameState = new GameState(
+            level,
+            new Snake(java.util.List.of(level.snakeStart())),
+            level.pins(),
+            GameState.Status.RUNNING,
+            Direction.NONE
+        );
 
-  public void setGamePanel(GamePanel panel) {
-    // TODO: Setter
-    throw new UnsupportedOperationException("method not implemented yet");
-  }
+    }
 
-  public void update(Direction d) {
-    // TODO: aktualisiere den Blickwinkel der Schlange (GameState)
-    // TODO: benachrichtige alle Observer und gibt den neuen Spielzustand mit (Neuzeichnen der
-    // Spielfläche)
-    throw new UnsupportedOperationException("method not implemented yet");
-  }
+    public GameState state() {
+        return this.currentGameState;
+    }
 
-  public void tick() {
-    // TODO: lass das Spiel (den GameState) einen Schritt ("tick") machen
-    // TODO: benachrichtige alle Observer und gibt den neuen Spielzustand mit (Neuzeichnen der
-    // Spielfläche)
-    throw new UnsupportedOperationException("method not implemented yet");
-  }
+    public void setGamePanel(GamePanel panel) {
+        this.gamePanel = panel;
+    }
+
+    public void update(Direction d) {
+        // Richtungsupdate: Erzeugt einen neuen Zustand mit der aktualisierten Richtung
+        if (this.currentGameState.status().isRunning()) {
+            this.currentGameState = new GameState(
+                this.currentGameState.level(),
+                this.currentGameState.snake(),
+                this.currentGameState.pins(),
+                this.currentGameState.status(),
+                d
+            );
+            notifyObserver();
+        }
+    }
+
+    public void tick() {
+        // Berechnet den nächsten Spielschritt über das Datenmodell
+        this.currentGameState = this.currentGameState.tick();
+        notifyObserver();
+    }
+
+    private void notifyObserver() {
+        if (this.gamePanel != null) {
+            this.gamePanel.update(this.currentGameState);
+            this.gamePanel.repaint();
+        }
+    }
 }
